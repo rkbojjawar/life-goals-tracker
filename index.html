@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RK Life Goals Tracker</title>
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --surface-2: #f2f1ee;
+    --border: #e4e2dc;
+    --border-strong: #ccc9c0;
+    --text: #1a1917;
+    --text-2: #5a5855;
+    --text-3: #8a8885;
+    --accent: #3b5bdb;
+    --accent-bg: #eef2ff;
+    --radius: 10px;
+    --card-radius: 14px;
+    --dot-career: #7F77DD;
+    --dot-health: #639922;
+    --dot-family: #EF9F27;
+    --dot-learning: #1D9E75;
+    --dot-finance: #378ADD;
+    --badge-career-bg: #EEEDFE; --badge-career-txt: #3C3489;
+    --badge-health-bg: #EAF3DE; --badge-health-txt: #27500A;
+    --badge-family-bg: #FAEEDA; --badge-family-txt: #633806;
+    --badge-learning-bg: #E1F5EE; --badge-learning-txt: #085041;
+    --badge-finance-bg: #E6F1FB; --badge-finance-txt: #0C447C;
+    --shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141412; --surface: #1e1d1b; --surface-2: #252420;
+      --border: #2e2d29; --border-strong: #3e3d38;
+      --text: #f0ede8; --text-2: #a09d97; --text-3: #6a6864;
+      --accent: #7c9ef5; --accent-bg: #1a2035;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
+  .shell { display: flex; min-height: 100vh; }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 1.5rem 0; display: flex; flex-direction: column; position: fixed;
+    top: 0; left: 0; height: 100vh; z-index: 10;
+  }
+  .brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .brand-name { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+  .brand-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 1.25rem;
+    cursor: pointer; font-size: 13.5px; color: var(--text-2); border-left: 2px solid transparent;
+    transition: all 0.12s; text-decoration: none;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--text); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-bg); font-weight: 500; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-section { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.07em; padding: 1rem 1.25rem 0.4rem; }
+  .streak-badge { margin-top: auto; margin: auto 1.25rem 0; padding: 0.75rem; background: var(--surface-2); border-radius: var(--radius); border: 1px solid var(--border); }
+  .streak-num { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
+  .streak-lbl { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+  /* Main */
+  .main { margin-left: 220px; flex: 1; padding: 2rem 2.5rem; max-width: 860px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 2rem; }
+  .page-title { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+  .page-sub { font-size: 14px; color: var(--text-3); margin-top: 4px; }
+  
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+  .card-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+  
+  /* Form elements */
+  input[type=text], textarea, select {
+    width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 8px 12px; font-size: 14px; background: var(--surface-2); color: var(--text);
+    font-family: inherit; transition: border-color 0.12s;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  select { cursor: pointer; }
+  
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:hover { opacity: 0.9; background: var(--accent); }
+  .btn-ghost { border-color: transparent; background: transparent; color: var(--accent); padding-left: 0; }
+  .btn-ghost:hover { background: var(--accent-bg); padding-left: 8px; }
+  
+  /* Area dots and badges */
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .dot-career { background: var(--dot-career); } .dot-health { background: var(--dot-health); }
+  .dot-family { background: var(--dot-family); } .dot-learning { background: var(--dot-learning); }
+  .dot-finance { background: var(--dot-finance); }
+  .badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+  .badge-career { background: var(--badge-career-bg); color: var(--badge-career-txt); }
+  .badge-health { background: var(--badge-health-bg); color: var(--badge-health-txt); }
+  .badge-family { background: var(--badge-family-bg); color: var(--badge-family-txt); }
+  .badge-learning { background: var(--badge-learning-bg); color: var(--badge-learning-txt); }
+  .badge-finance { background: var(--badge-finance-bg); color: var(--badge-finance-txt); }
+  
+  /* MIT */
+  .mit-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .mit-item:last-child { border-bottom: none; }
+  .mit-num { font-size: 11px; font-weight: 700; color: var(--text-3); width: 18px; padding-top: 10px; }
+  .mit-body { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .check-circle {
+    width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border-strong);
+    cursor: pointer; flex-shrink: 0; margin-top: 8px; display: flex; align-items: center;
+    justify-content: center; transition: all 0.15s;
+  }
+  .check-circle.done { background: var(--dot-health); border-color: var(--dot-health); }
+  .check-circle.done::after { content: '✓'; color: white; font-size: 12px; font-weight: 600; }
+  
+  /* Theme pills */
+  .theme-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .theme-pill {
+    display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px;
+    border-radius: 20px; border: 1px solid var(--border); cursor: pointer;
+    font-size: 13px; color: var(--text-2); transition: all 0.12s; background: var(--surface);
+  }
+  .theme-pill:hover { border-color: var(--border-strong); color: var(--text); }
+  .theme-pill.sel { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  
+  /* Progress bar */
+  .prog-wrap { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .prog-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.3s; }
+  
+  /* Grid layouts */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .metric { background: var(--surface-2); border-radius: var(--radius); padding: 1rem; text-align: center; border: 1px solid var(--border); }
+  .metric-num { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
+  .metric-lbl { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+  
+  /* Area row */
+  .area-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .area-row:last-child { border-bottom: none; }
+  .area-row-label { flex: 1; font-size: 13.5px; color: var(--text); }
+  
+  /* Goal area card */
+  .goal-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 1.25rem; margin-bottom: 12px; }
+  .goal-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .goal-card-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .goal-input-row { margin-bottom: 8px; }
+  
+  /* Mobile */
+  @media (max-width: 680px) {
+    .sidebar { width: 100%; height: auto; position: sticky; top: 0; flex-direction: row; padding: 0; border-right: none; border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .brand { display: none; }
+    .nav-section { display: none; }
+    .streak-badge { display: none; }
+    .nav-item { padding: 12px 14px; border-left: none; border-bottom: 2px solid transparent; flex-direction: column; gap: 2px; font-size: 11px; min-width: 64px; }
+    .nav-item.active { border-bottom-color: var(--accent); border-left-color: transparent; }
+    .nav-icon { font-size: 18px; }
+    .main { margin-left: 0; padding: 1.25rem; }
+    .grid3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- Sidebar -->
+<nav class="sidebar" role="navigation" aria-label="Main navigation">
+  <div class="brand">
+    <div class="brand-name">Life Goals Tracker</div>
+    <div class="brand-sub">RK · Accenture · Oracle</div>
+  </div>
+  <div class="nav-section">Plan</div>
+  <a class="nav-item active" onclick="show('today')" href="#">
+    <span class="nav-icon">☀️</span> Today
+  </a>
+  <a class="nav-item" onclick="show('weekly')" href="#">
+    <span class="nav-icon">📅</span> This week
+  </a>
+  <a class="nav-item" onclick="show('monthly')" href="#">
+    <span class="nav-icon">🗓️</span> This month
+  </a>
+  <a class="nav-item" onclick="show('yearly')" href="#">
+    <span class="nav-icon">🎯</span> This year
+  </a>
+  <div class="nav-section">Manage</div>
+  <a class="nav-item" onclick="show('setup')" href="#">
+    <span class="nav-icon">⚙️</span> Setup goals
+  </a>
+  <a class="nav-item" onclick="show('dashboard')" href="#">
+    <span class="nav-icon">📊</span> Dashboard
+  </a>
+  <div class="streak-badge">
+    <div class="streak-num" id="sb-streak">0</div>
+    <div class="streak-lbl">day streak 🔥</div>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- TODAY -->
+  <div class="page active" id="page-today">
+    <div class="page-header">
+      <div class="page-title">Today</div>
+      <div class="page-sub" id="today-date"></div>
+    </div>
+
+    <div class="card-label">Daily theme — where does your deep energy go today?</div>
+    <div class="theme-grid">
+      <span class="theme-pill" data-theme="Career & Work" onclick="selTheme(this)"><span class="dot dot-career"></span>Career & Work</span>
+      <span class="theme-pill" data-theme="Health & Fitness" onclick="selTheme(this)"><span class="dot dot-health"></span>Health & Fitness</span>
+      <span class="theme-pill" data-theme="Family" onclick="selTheme(this)"><span class="dot dot-family"></span>Family</span>
+      <span class="theme-pill" data-theme="Learning & Growth" onclick="selTheme(this)"><span class="dot dot-learning"></span>Learning & Growth</span>
+      <span class="theme-pill" data-theme="Finance & Wealth" onclick="selTheme(this)"><span class="dot dot-finance"></span>Finance & Wealth</span>
+    </div>
+
+    <div class="card-label">Most important tasks (MIT) — max 3, non-negotiable</div>
+    <div class="card">
+      <div id="mit-list"></div>
+      <button class="btn btn-ghost" onclick="addMIT()" style="margin-top:4px">+ Add MIT</button>
+    </div>
+
+    <div class="grid2" style="margin-bottom:1rem">
+      <div>
+        <div class="card-label">Morning intention</div>
+        <div class="card" style="padding-bottom:0.75rem">
+          <textarea id="intention" placeholder="What does a good day look like? Set your intention in 1–2 sentences." style="min-height:90px"></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Evening reflection</div>
+        <div class="card" style="padding-bottom:0.75rem">
+          <textarea id="reflection" placeholder="What worked? What didn't? One thing to carry forward." style="min-height:90px"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveDay()">Save today ✓</button>
+  </div>
+
+  <!-- WEEKLY -->
+  <div class="page" id="page-weekly">
+    <div class="page-header">
+      <div class="page-title">This week</div>
+      <div class="page-sub" id="week-label"></div>
+    </div>
+    <div class="card-label">Week theme</div>
+    <div class="card">
+      <input type="text" id="weekTheme" placeholder="e.g. Oracle PLM delivery week, Health reset week, Family-first week...">
+    </div>
+    <div class="card-label">Weekly goals by life area</div>
+    <div id="weekly-goals"></div>
+    <div class="card-label">Weekly review (fill Sunday evening)</div>
+    <div class="card">
+      <textarea id="weekReview" placeholder="Wins this week, what you missed, and what you'll do differently next week." style="min-height:100px"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="saveWeek()">Save week ✓</button>
+  </div>
+
+  <!-- MONTHLY -->
+  <div class="page" id="page-monthly">
+    <div class="page-header">
+      <div class="page-title">This month</div>
+      <div class="page-sub" id="month-label"></div>
+    </div>
+    <div class="card-label">Monthly focus</div>
+    <div class="card">
+      <input type="text" id="monthFocus" placeholder="The one big thing this month accomplishes...">
+    </div>
+    <div class="card-label">Monthly goals by life area</div>
+    <div id="monthly-goals"></div>
+    <div class="card-label">Monthly reflection</div>
+    <div class="card">
+      <textarea id="monthReview" placeholder="Progress, surprises, recalibrations. What changed? What do you need to adjust?" style="min-height:100px"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="saveMonth()">Save month ✓</button>
+  </div>
+
+  <!-- YEARLY -->
+  <div class="page" id="page-yearly">
+    <div class="page-header">
+      <div class="page-title">This year</div>
+      <div class="page-sub">Your north star — where are you headed?</div>
+    </div>
+    <div class="card-label">North star — the life you want to be living by end of year</div>
+    <div class="card">
+      <textarea id="northStar" placeholder="Be specific. Describe career wins, family moments, health milestones, what you've learned, and your financial position." style="min-height:120px"></textarea>
+    </div>
+    <div class="card-label">Yearly goals by life area</div>
+    <div id="yearly-goals"></div>
+    <button class="btn btn-primary" onclick="saveYear()">Save yearly goals ✓</button>
+  </div>
+
+  <!-- SETUP -->
+  <div class="page" id="page-setup">
+    <div class="page-header">
+      <div class="page-title">Setup goals</div>
+      <div class="page-sub">Start here. These cascade into your weekly and daily views.</div>
+    </div>
+    <div id="setup-areas"></div>
+    <button class="btn btn-primary" onclick="saveSetup()">Save all ✓</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page" id="page-dashboard">
+    <div class="page-header">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Your progress snapshot</div>
+    </div>
+    <div class="grid3" style="margin-bottom:1.5rem">
+      <div class="metric"><div class="metric-num" id="d-streak">0</div><div class="metric-lbl">Day streak 🔥</div></div>
+      <div class="metric"><div class="metric-num" id="d-mit">0/3</div><div class="metric-lbl">MIT today</div></div>
+      <div class="metric"><div class="metric-num" id="d-theme" style="font-size:16px;padding-top:6px">—</div><div class="metric-lbl">Today's theme</div></div>
+    </div>
+    <div class="card-label">Life area goal coverage</div>
+    <div class="card" id="area-balance"></div>
+    <div class="card-label" style="margin-top:1.5rem">This week's goals</div>
+    <div class="card" id="week-glance"></div>
+    <div class="card-label" style="margin-top:1.5rem">Monthly focus</div>
+    <div class="card" id="month-glance"></div>
+  </div>
+
+</main>
+</div>
+
+<script>
+const AREAS = [
+  {id:'career', label:'Career & Work', cls:'career', hint:'Accenture / Oracle Cloud / leadership'},
+  {id:'health', label:'Health & Fitness', cls:'health', hint:'Energy, exercise, sleep, wellbeing'},
+  {id:'family', label:'Family', cls:'family', hint:'Kids (12 & 4), Shilpa, quality time'},
+  {id:'learning', label:'Learning & Growth', cls:'learning', hint:'Books, courses, skills, certifications'},
+  {id:'finance', label:'Finance & Wealth', cls:'finance', hint:'Savings, investments, financial planning'}
+];
+
+let S = {
+  mits: [], theme: '', intention: '', reflection: '',
+  weekTheme: '', weekGoals: {}, weekReview: '',
+  monthFocus: '', monthGoals: {}, monthReview: '',
+  northStar: '', yearGoals: {},
+  setupGoals: {}, streak: 0, lastSaved: ''
+};
+
+function load() {
+  try { const d = localStorage.getItem('rk_goals_v2'); if (d) S = {...S, ...JSON.parse(d)}; } catch(e) {}
+}
+function persist() {
+  try { localStorage.setItem('rk_goals_v2', JSON.stringify(S)); } catch(e) {}
+}
+load();
+
+// Dates
+const now = new Date();
+document.getElementById('today-date').textContent = now.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+const wStart = new Date(now); wStart.setDate(now.getDate() - now.getDay() + 1);
+document.getElementById('week-label').textContent = 'Week of ' + wStart.toLocaleDateString('en-US', {month:'long', day:'numeric'});
+document.getElementById('month-label').textContent = now.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+function show(v) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + v).classList.add('active');
+  event.currentTarget.classList.add('active');
+  render(v);
+  window.scrollTo(0, 0);
+  return false;
+}
+
+function render(v) {
+  if (v === 'today') renderToday();
+  if (v === 'weekly') renderWeekly();
+  if (v === 'monthly') renderMonthly();
+  if (v === 'yearly') renderYearly();
+  if (v === 'setup') renderSetup();
+  if (v === 'dashboard') renderDash();
+}
+
+// ---- TODAY ----
+function renderToday() {
+  if (!S.mits.length) S.mits = [{text:'',area:'Career & Work',done:false},{text:'',area:'Health & Fitness',done:false}];
+  const ml = document.getElementById('mit-list');
+  ml.innerHTML = '';
+  S.mits.forEach((m, i) => {
+    const d = document.createElement('div');
+    d.className = 'mit-item';
+    d.innerHTML = `<div class="mit-num">${i+1}</div>
+      <div class="mit-body">
+        <input type="text" value="${esc(m.text)}" placeholder="What must happen today?" onchange="S.mits[${i}].text=this.value">
+        <select onchange="S.mits[${i}].area=this.value" style="width:auto;font-size:12px;padding:4px 8px">
+          ${AREAS.map(a=>`<option value="${a.label}" ${m.area===a.label?'selected':''}>${a.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="check-circle ${m.done?'done':''}" onclick="S.mits[${i}].done=!S.mits[${i}].done;renderToday()" aria-label="Toggle done"></div>`;
+    ml.appendChild(d);
+  });
+  document.querySelectorAll('.theme-pill').forEach(p => {
+    p.classList.toggle('sel', p.dataset.theme === S.theme);
+  });
+  document.getElementById('intention').value = S.intention || '';
+  document.getElementById('reflection').value = S.reflection || '';
+  document.getElementById('sb-streak').textContent = S.streak || 0;
+}
+
+function addMIT() {
+  if (S.mits.length >= 3) { alert('Max 3 MITs. This is the rule — if everything is important, nothing is.'); return; }
+  S.mits.push({text:'', area:'Career & Work', done:false});
+  renderToday();
+}
+
+function selTheme(el) {
+  document.querySelectorAll('.theme-pill').forEach(p => p.classList.remove('sel'));
+  el.classList.add('sel');
+  S.theme = el.dataset.theme;
+}
+
+function saveDay() {
+  S.intention = document.getElementById('intention').value;
+  S.reflection = document.getElementById('reflection').value;
+  const today = now.toDateString();
+  if (S.lastSaved !== today) { S.streak = (S.streak || 0) + 1; S.lastSaved = today; }
+  persist();
+  document.getElementById('sb-streak').textContent = S.streak;
+  showToast('Today saved ✓');
+}
+
+// ---- GOALS BY AREA ----
+function renderGoalArea(containerId, stateKey, placeholder, count) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  c.innerHTML = '';
+  AREAS.forEach(a => {
+    const goals = (S[stateKey] || {})[a.id] || ['', ''];
+    const card = document.createElement('div');
+    card.className = 'goal-card';
+    card.innerHTML = `<div class="goal-card-header">
+        <span class="dot dot-${a.cls}"></span>
+        <span class="goal-card-title">${a.label}</span>
+        <span class="badge badge-${a.cls}">${a.cls}</span>
+      </div>
+      ${goals.map((g,i) => `<div class="goal-input-row"><input type="text" value="${esc(g)}" placeholder="${placeholder} ${i+1}" onchange="setGoal('${stateKey}','${a.id}',${i},this.value)"></div>`).join('')}
+      <button class="btn btn-ghost" style="margin-top:4px;font-size:12px" onclick="addGoalRow('${stateKey}','${a.id}','${containerId}','${placeholder}')">+ Add goal</button>`;
+    c.appendChild(card);
+  });
+}
+
+function setGoal(sk, aid, idx, val) {
+  if (!S[sk]) S[sk] = {};
+  if (!S[sk][aid]) S[sk][aid] = ['', ''];
+  S[sk][aid][idx] = val;
+}
+
+function addGoalRow(sk, aid, cid, ph) {
+  if (!S[sk]) S[sk] = {};
+  if (!S[sk][aid]) S[sk][aid] = [];
+  S[sk][aid].push('');
+  renderGoalArea(cid, sk, ph);
+}
+
+// ---- WEEKLY ----
+function renderWeekly() {
+  document.getElementById('weekTheme').value = S.weekTheme || '';
+  document.getElementById('weekReview').value = S.weekReview || '';
+  renderGoalArea('weekly-goals', 'weekGoals', 'Goal');
+}
+function saveWeek() {
+  S.weekTheme = document.getElementById('weekTheme').value;
+  S.weekReview = document.getElementById('weekReview').value;
+  persist(); showToast('Week saved ✓');
+}
+
+// ---- MONTHLY ----
+function renderMonthly() {
+  document.getElementById('monthFocus').value = S.monthFocus || '';
+  document.getElementById('monthReview').value = S.monthReview || '';
+  renderGoalArea('monthly-goals', 'monthGoals', 'Goal');
+}
+function saveMonth() {
+  S.monthFocus = document.getElementById('monthFocus').value;
+  S.monthReview = document.getElementById('monthReview').value;
+  persist(); showToast('Month saved ✓');
+}
+
+// ---- YEARLY ----
+function renderYearly() {
+  document.getElementById('northStar').value = S.northStar || '';
+  renderGoalArea('yearly-goals', 'yearGoals', 'Goal');
+}
+function saveYear() {
+  S.northStar = document.getElementById('northStar').value;
+  persist(); showToast('Yearly goals saved ✓');
+}
+
+// ---- SETUP ----
+function renderSetup() {
+  const c = document.getElementById('setup-areas');
+  c.innerHTML = '';
+  AREAS.forEach(a => {
+    const g = (S.setupGoals || {})[a.id] || {y:'', m:'', w:''};
+    const card = document.createElement('div');
+    card.className = 'goal-card';
+    card.style.marginBottom = '14px';
+    card.innerHTML = `<div class="goal-card-header">
+        <span class="dot dot-${a.cls}"></span>
+        <span class="goal-card-title">${a.label}</span>
+        <span style="font-size:12px;color:var(--text-3)">${a.hint}</span>
+      </div>
+      <div class="card-label">Yearly aspiration</div>
+      <div class="goal-input-row"><input type="text" value="${esc(g.y)}" placeholder="Where do you want to be in 1 year?" onchange="setSG('${a.id}','y',this.value)"></div>
+      <div class="card-label" style="margin-top:12px">This month's milestone</div>
+      <div class="goal-input-row"><input type="text" value="${esc(g.m)}" placeholder="Concrete, measurable milestone" onchange="setSG('${a.id}','m',this.value)"></div>
+      <div class="card-label" style="margin-top:12px">This week's focus</div>
+      <div class="goal-input-row"><input type="text" value="${esc(g.w)}" placeholder="The one thing this week" onchange="setSG('${a.id}','w',this.value)"></div>`;
+    c.appendChild(card);
+  });
+}
+function setSG(aid, k, v) {
+  if (!S.setupGoals) S.setupGoals = {};
+  if (!S.setupGoals[aid]) S.setupGoals[aid] = {};
+  S.setupGoals[aid][k] = v;
+}
+function saveSetup() { persist(); showToast('Foundation goals saved ✓ — now fill in Today, Week and Month'); }
+
+// ---- DASHBOARD ----
+function renderDash() {
+  const done = S.mits.filter(m => m.done).length;
+  document.getElementById('d-streak').textContent = S.streak || 0;
+  document.getElementById('d-mit').textContent = `${done}/${S.mits.length || 3}`;
+  document.getElementById('d-theme').textContent = S.theme || '—';
+  document.getElementById('sb-streak').textContent = S.streak || 0;
+
+  const ab = document.getElementById('area-balance');
+  ab.innerHTML = AREAS.map(a => {
+    const goals = (S.yearGoals || {})[a.id] || [];
+    const filled = goals.filter(g => g).length;
+    const total = Math.max(goals.length, 1);
+    const pct = Math.round((filled / total) * 100);
+    return `<div class="area-row">
+      <span class="dot dot-${a.cls}"></span>
+      <span class="area-row-label">${a.label}</span>
+      <span style="font-size:12px;color:var(--text-3);margin-right:10px">${filled} goal${filled!==1?'s':''}</span>
+      <div style="width:100px"><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>
+    </div>`;
+  }).join('');
+
+  const wg = document.getElementById('week-glance');
+  const wGoals = Object.entries(S.weekGoals || {}).flatMap(([aid, goals]) => {
+    const area = AREAS.find(a => a.id === aid);
+    return (goals || []).filter(g => g).map(g => ({text: g, cls: area ? area.cls : 'career', label: area ? area.label : ''}));
+  });
+  wg.innerHTML = wGoals.length
+    ? wGoals.map(g => `<div class="area-row"><span class="dot dot-${g.cls}"></span><span style="font-size:13px;color:var(--text)">${g.text}</span><span class="badge badge-${g.cls}" style="margin-left:auto">${g.cls}</span></div>`).join('')
+    : `<div style="font-size:13px;color:var(--text-3);padding:4px 0">No weekly goals yet — go to "This week" to add them.</div>`;
+
+  const mg = document.getElementById('month-glance');
+  mg.innerHTML = S.monthFocus
+    ? `<div style="font-size:14px;color:var(--text)">${S.monthFocus}</div>`
+    : `<div style="font-size:13px;color:var(--text-3)">No monthly focus set — go to "This month".</div>`;
+}
+
+// ---- UTILS ----
+function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText='position:fixed;bottom:24px;right:24px;background:#1a1917;color:#f0ede8;padding:10px 18px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.2s'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.opacity = '1';
+  setTimeout(() => t.style.opacity = '0', 2500);
+}
+
+renderToday();
+</script>
+</body>
+</html>
